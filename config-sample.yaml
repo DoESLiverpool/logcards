@@ -1,0 +1,7 @@
+users:
+# The uid will be a hexadecimal number
+    uid:
+        name: Bilbo Baggins
+        nickname: Bilbo
+        mapme_at_code: ABABABAB
+        ringtone: cantina-short.wav
