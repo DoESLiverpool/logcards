@@ -10,7 +10,7 @@
 
 require 'yaml'
 
-class Config
+class LCConfig
     def self.load
         @@config = YAML.load_file('config.yaml')
     end
@@ -22,8 +22,8 @@ class Config
     def self.setup_signal
         Signal.trap("HUP") do
             begin
-                Config.load
-                puts Config.config.inspect
+                LCConfig.load
+                puts LCConfig.config.inspect
             rescue Exception => e
                 puts "erk: #{e.inspect}"
             end
@@ -32,9 +32,9 @@ class Config
 end
 
 
-Config.load
-puts Config.config.inspect
-Config.setup_signal
+LCConfig.load
+puts LCConfig.config.inspect
+LCConfig.setup_signal
 
 
 scansFile = nil
@@ -57,7 +57,7 @@ while true
                 uid = matches[1].gsub(/ /,"")
                 scansFile.write("#{uid}\t#{time}\n")
                 scansFile.flush
-                user = Config.config["users"][uid]
+                user = LCConfig.config["users"][uid]
                 name = ""
                 nickname = ""
                 if user
