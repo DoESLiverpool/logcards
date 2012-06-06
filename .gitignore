@@ -1,5 +1,6 @@
 *.log
 config.yaml
 visits.yaml
+day_visits.yaml
 .*.sw?
 *.wav
