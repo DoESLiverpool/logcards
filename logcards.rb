@@ -37,9 +37,19 @@ LCConfig.load
 puts LCConfig.config.inspect
 LCConfig.setup_signal
 
+special_sounds = {
+    '10-31' => [
+        'halloween/cackle3.wav',
+        'halloween/creakdoor2.wav',
+        'halloween/ghost5.wav',
+        'halloween/howling1.wav',
+        'halloween/thunder12.wav'
+    ]
+}
 
 scansFile = nil
 visitsFile = nil
+$testUID = nil
 visits = YAML.load_file('visits.yaml')
 if visits.nil? or visits == false
     visits = {}
@@ -47,6 +57,10 @@ end
 dayVisits = YAML.load_file('day_visits.yaml')
 if dayVisits.nil? or dayVisits == false
     dayVisits = {}
+end
+
+Signal.trap("SIGUSR1") do
+   $testUID = '04257061942680'
 end
 
 while true
@@ -57,10 +71,15 @@ while true
 		while true
             list = `nfc-list`
             matches = list.match(/UID.*: (.*)$/)
-            if matches
+            uid = nil
+            uid = matches[1].gsub(/ /,"") if matches
+            if uid.nil? and $testUID
+                uid = $testUID
+                $testUID = nil
+            end
+            if uid
                 time = Time.now
                 today = Date.today.to_s
-                uid = matches[1].gsub(/ /,"")
                 scansFile.write("#{uid}\t#{time}\n")
                 scansFile.flush
                 user = LCConfig.config["users"][uid]
@@ -75,6 +94,10 @@ while true
                     name = user["name"]
                     nickname = user["nickname"]
                     nickname = name if nickname.nil?
+                else
+                    puts "#{uid} was unrecognised"
+                    blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to John and be inducted." 1> /dev/null 2>&1`
+                    next
                 end
                 
                 last_day = dayVisits[uid]
@@ -82,7 +105,7 @@ while true
                     dayVisits[uid] = today
                     if user and user["hotdesker"] == true and time.hour < 17
                         puts "Log hot desk visit by #{user["name"]}!"
-                        puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(user["name"])}&entry.2.group=1&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
+                        puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(user["name"])}&entry.2.group=#{(time.hour < 13 ? '1' : '0.5')}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
                         if false
                             #res = Net::HTTP.post_form(uri, 'entry.1.single' => user["name"], 'entry.2.group' => '1' )
                             uri = URI('https://docs.google.com/spreadsheet/viewform?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ')
@@ -132,14 +155,21 @@ while true
                     #blah = `play thanks-goodbye.aiff > /dev/null 2> /dev/null`
                     visits[uid] = nil
                 else
+                    special_sound = nil
+                    day_sounds = special_sounds["#{time.month}-#{time.day}"]
+                    if day_sounds
+                        special_sound = day_sounds.sample
+                    end
                     puts "#{uid} Arrived"
                     visits[uid] = { "arrived_at" => time }
-                    if user and user["ringtone"]
+                    if special_sound
+                        cmd = "play #{special_sound}"
+                        puts "ringtone: #{cmd}"
+                        blah = `#{cmd}`
+                    elsif user and user["ringtone"]
                         cmd = "play #{user["ringtone"]}"
                         puts "ringtone: #{cmd}"
                         blah = `#{cmd}`
-                    elsif nickname.nil? or nickname == ''
-                        blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to John and be inducted." 1> /dev/null 2>&1`
                     else
                         blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" 1> /dev/null 2>&1`
                     end
