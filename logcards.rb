@@ -11,6 +11,8 @@
 require 'yaml'
 require 'net/http'
 
+YAML::ENGINE.yamler = 'syck'
+
 class LCConfig
     def self.load
         @@config = YAML.load_file('config.yaml')
@@ -47,6 +49,12 @@ special_sounds = {
     ]
 }
 
+def setDoorState(state)
+    `echo #{state} > /sys/class/gpio/gpio25/value`
+end
+
+puts "DoorBot: #{ENV["DOORBOT_ENV"]}"
+
 scansFile = nil
 visitsFile = nil
 $testUID = nil
@@ -60,7 +68,7 @@ if dayVisits.nil? or dayVisits == false
 end
 
 Signal.trap("SIGUSR1") do
-   $testUID = '04257061942680'
+   $testUID = ''
 end
 
 while true
@@ -69,20 +77,28 @@ while true
 		visitsFile = File.open("visits.log", "a")
 		
 		while true
-            list = `nfc-list`
+            list = `./rcapp`
+            #puts "list=#{list}:"
+            #next
+
             matches = list.match(/UID.*: (.*)$/)
             uid = nil
-            uid = matches[1].gsub(/ /,"") if matches
+            uid = list.chomp
+            #uid = matches[1].gsub(/ /,"") if matches
             if uid.nil? and $testUID
                 uid = $testUID
                 $testUID = nil
             end
-            if uid
+            if ! uid.empty?
                 time = Time.now
                 today = Date.today.to_s
                 scansFile.write("#{uid}\t#{time}\n")
                 scansFile.flush
                 user = LCConfig.config["users"][uid]
+                while user["primary"]
+                    uid = user["primary"]
+                    user = LCConfig.config["users"][uid]
+                end
                 name = ""
                 nickname = ""
                 if user
@@ -100,10 +116,16 @@ while true
                     next
                 end
                 
+                access = user["access"] || []
+                close_door = false
+                if access.index("full") || ENV['DOORBOT_ENV'] == 'doorbot2'
+                    setDoorState(1)
+                    close_door = true
+                end
                 last_day = dayVisits[uid]
                 if last_day != today
                     dayVisits[uid] = today
-                    if user and user["hotdesker"] == true and time.hour < 17
+                    if ENV['DOORBOT_ENV'] == 'doorbot1' and user and user["hotdesker"] == true and time.hour < 17
                         puts "Log hot desk visit by #{user["name"]}!"
                         puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(user["name"])}&entry.2.group=#{(time.hour < 13 ? '1' : '0.5')}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
                         if false
@@ -167,7 +189,7 @@ while true
                         puts "ringtone: #{cmd}"
                         blah = `#{cmd}`
                     elsif user and user["ringtone"]
-                        cmd = "play #{user["ringtone"]}"
+                        cmd = "play wav/#{user["ringtone"]}"
                         puts "ringtone: #{cmd}"
                         blah = `#{cmd}`
                     else
@@ -180,15 +202,20 @@ while true
                    YAML.dump(visits, out)
 
                 end
+                if close_door
+                    setDoorState(0)
+                end
             end
 		end
     rescue SystemExit
+        setDoorState(0)
         exit
-    rescue Exception => e
-        puts "Oops #{e.inspect}"
+    #rescue Exception => e
+    #    setDoorState(0)
+    #    puts "Oops #{e.inspect}"
     end
     scansFile.close if scansFile
     visitsFile.close if visitsFile
 
-    sleep 60
+    sleep 5
 end
