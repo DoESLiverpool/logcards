@@ -73,21 +73,42 @@ Signal.trap("SIGUSR1") do
    $testUID = ''
 end
 
-while true
-	begin
-		scansFile = File.open("scans.log", "a")
-		visitsFile = File.open("visits.log", "a")
-		
-		while true
-            list = `./rcapp`
-            #puts "list=#{list}:"
-            #next
 
-            matches = list.match(/UID.*: (.*)$/)
-            uid = nil
+test_pipe_filename = "/tmp/logcards-test.pipe"
+if ENV['DOORBOT_TEST'] == 'test'
+  `rm -f #{test_pipe_filename}`
+  `mkfifo #{test_pipe_filename}`
+  test_input = open(test_pipe_filename, "r")
+else
+  test_input = nil
+end
+
+while true
+  begin
+    scansFile = File.open("scans.log", "a")
+    visitsFile = File.open("visits.log", "a")
+    if test_input and ( test_input.eof? || test_input.closed? )
+      if ! test_input.closed?
+        test_input.close
+      end
+      test_input = open(test_pipe_filename, "r")
+    end
+    
+    while true
+              
+            if test_input
+              begin
+                list = test_input.readline
+              rescue EOFError
+                list = ''
+              end
+            else
+              list = `./rcapp`
+            end
+
             uid = list.chomp
             #uid = matches[1].gsub(/ /,"") if matches
-            if uid.nil? and $testUID
+            if uid.empty? and $testUID
                 uid = $testUID
                 $testUID = nil
             end
