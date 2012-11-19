@@ -221,6 +221,9 @@ while true
                    YAML.dump(visits, out)
 
                 end
+                if close_door
+                    setDoorState(0)
+                end
                 if user and user["mapme_at_code"]
                     puts "Should check into mapme.at"
                     host = "DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at"
@@ -230,11 +233,8 @@ while true
 
                     #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
                 end
-                if close_door
-                    setDoorState(0)
-                end
             end
-		end
+    end
     rescue SystemExit
         setDoorState(0)
         exit
