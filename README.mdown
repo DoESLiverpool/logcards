@@ -5,12 +5,12 @@ Script for operating the doors in DoES Liverpool.
 
 When testing, set the environment variable `DOORBOT_TEST`:
 
-    `DOORBOT_TEST=TEST`
+    export DOORBOT_TEST=TEST
 
 This will create a named pipe at `/tmp/logcards-test.pipe` into which you can pipe UIDs to test the code, e.g.:
 
-    `echo myuniqueid > /tmp/logcards-test.pipe`
+    echo myuniqueid > /tmp/logcards-test.pipe
 
 More documentation on the system can be found on the DoES wiki:
 
-    http://wiki.doesliverpool.com/DoorBot
+http://wiki.doesliverpool.com/DoorBot
