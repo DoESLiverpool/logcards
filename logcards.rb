@@ -10,6 +10,7 @@
 
 require 'yaml'
 require 'net/http'
+require 'dnsruby'
 
 YAML::ENGINE.yamler = 'syck'
 
@@ -103,10 +104,6 @@ while true
                 nickname = ""
                 if user
                     puts "Visit from #{user["name"]}"
-                    if user["mapme_at_code"]
-                        puts "Should check into mapme.at"
-                        puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
-                    end
                     name = user["name"]
                     nickname = user["nickname"]
                     nickname = name if nickname.nil?
@@ -201,6 +198,15 @@ while true
 
                    YAML.dump(visits, out)
 
+                end
+                if user and user["mapme_at_code"]
+                    puts "Should check into mapme.at"
+                    host = "DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at"
+                    Dnsruby::DNS.open {|dns|
+                        puts dns.getresource(host, "TXT")
+                    }
+
+                    #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
                 end
                 if close_door
                     setDoorState(0)
