@@ -8,11 +8,12 @@
 #      SAK (SEL_RES): 00  
 #
 
+require 'rubygems'
 require 'yaml'
 require 'net/http'
 require 'dnsruby'
 
-YAML::ENGINE.yamler = 'syck'
+#YAML::ENGINE.yamler = 'syck'
 
 class LCConfig
     def self.load
