@@ -118,7 +118,7 @@ while true
                 scansFile.write("#{uid}\t#{time}\n")
                 scansFile.flush
                 user = LCConfig.config["users"][uid]
-                while user["primary"]
+                while user and user["primary"]
                     uid = user["primary"]
                     user = LCConfig.config["users"][uid]
                 end
