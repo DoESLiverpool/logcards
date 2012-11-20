@@ -238,9 +238,9 @@ while true
     rescue SystemExit
         setDoorState(0)
         exit
-    #rescue Exception => e
-    #    setDoorState(0)
-    #    puts "Oops #{e.inspect}"
+    rescue Exception => e
+        setDoorState(0)
+        puts "Oops #{e.inspect}"
     end
     scansFile.close if scansFile
     visitsFile.close if visitsFile
