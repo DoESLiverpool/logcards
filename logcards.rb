@@ -118,10 +118,23 @@ while true
                 scansFile.write("#{uid}\t#{time}\n")
                 scansFile.flush
                 user = LCConfig.config["users"][uid]
+                seen = []
+                puts "tag #{uid} at #{Time.now}"
                 while user and user["primary"]
+                    seen << uid
                     uid = user["primary"]
+                    if seen.index(uid)
+                        puts "OMG RECURSION!!"
+                        blah = `espeak -v en "Recursion error!"`
+                        uid = ""
+                        user = nil
+                        break
+                    end
                     user = LCConfig.config["users"][uid]
+                    puts "- has primary: #{uid}"
                 end
+            end
+            if ! uid.empty?
                 name = ""
                 nickname = ""
                 if user
