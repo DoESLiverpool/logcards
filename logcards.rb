@@ -14,16 +14,25 @@ require 'bundler/setup'
 require 'yaml'
 require 'net/http'
 require 'dnsruby'
+require 'tzinfo'
 
 #YAML::ENGINE.yamler = 'syck'
 
 class LCConfig
     def self.load
         @@config = YAML.load_file('config.yaml')
+        @@tz = nil
+        if @@config["settings"] and @@config["settings"]["timezone"]
+          @@tz = TZInfo::Timezone.get(@@config["settings"]["timezone"])
+        end
     end
 
     def self.config
         @@config
+    end
+
+    def self.tz
+        @@tz
     end
 
     def self.setup_signal
@@ -122,13 +131,16 @@ while true
                 $testUID = nil
             end
             if ! uid.empty?
-                time = Time.now
+                time = Time.now.utc
+                if LCConfig.tz
+                  time = LCConfig.tz.utc_to_local(time)
+                end
                 today = Date.today.to_s
                 scansFile.write("#{uid}\t#{time}\n")
                 scansFile.flush
                 user = LCConfig.config["users"][uid]
                 seen = []
-                puts "tag #{uid} at #{Time.now}"
+                puts "tag #{uid} at #{time}"
                 while user and user["primary"]
                     seen << uid
                     uid = user["primary"]
