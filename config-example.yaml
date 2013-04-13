@@ -1,0 +1,31 @@
+# Some general settings
+settings:
+# Optional timezone, used for defining half-days of hotdesking
+    timezone: "Europe/London"
+# A hash of users
+# Hash is keyed on the RFID tag's UID
+# User entity is a hash containing the following elements:
+#   name:       Name of the person, used for logging
+#   nickname:   Nickname, currently used when saying hello or goodbye
+#   hotdesker:  Boolean, if yes this will submit to a Google
+#               Form when the person checks in
+#   ringtone:   Filename of a wav file to play when person arrives.
+#               Files should be found in wav/ subdirectory
+#   access:     An array of access levels, currently only "full" is valid
+#   primary:    If this entry is present, the given UID is used instead
+users:
+    "abababab":
+        name: John Appleseed
+        nickname: John
+    "bcbcbcbc":
+        name: John Smith
+        nickname: John
+        hotdesker: yes
+    "cdcdcdcd":
+        name: Jane Doe
+        nickname: Jane
+        ringtone: pursuit-of-vikings.wav
+        access:
+            full
+    "dededede":
+        primary: "abababab"
