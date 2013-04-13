@@ -9,6 +9,8 @@
 #
 
 require 'rubygems'
+require 'bundler/setup'
+
 require 'yaml'
 require 'net/http'
 require 'dnsruby'
@@ -57,14 +59,21 @@ end
 
 puts "DoorBot: #{ENV["DOORBOT_ENV"]}"
 
+VISITS_YAML = 'visits.yaml'
+DAY_VISITS_YAML = 'day_visits.yaml'
+
 scansFile = nil
 visitsFile = nil
 $testUID = nil
-visits = YAML.load_file('visits.yaml')
+if File.file?(VISITS_YAML)
+  visits = YAML.load_file(VISITS_YAML)
+end
 if visits.nil? or visits == false
     visits = {}
 end
-dayVisits = YAML.load_file('day_visits.yaml')
+if File.file?(DAY_VISITS_YAML)
+  dayVisits = YAML.load_file(DAY_VISITS_YAML)
+end
 if dayVisits.nil? or dayVisits == false
     dayVisits = {}
 end
@@ -190,7 +199,7 @@ while true
                         end
                         puts res ? res.body : "result is nil!"
                     end
-                    File.open("day_visits.yaml", "w") do |out|
+                    File.open(DAY_VISITS_YAML, "w") do |out|
                         YAML.dump(dayVisits,out)
                     end
                 end
@@ -229,7 +238,7 @@ while true
                     end
                     #blah = `play thanks-welcome.aiff > /dev/null 2> /dev/null`
                 end
-                File.open("visits.yaml", "w") do |out|
+                File.open(VISITS_YAML, "w") do |out|
 
                    YAML.dump(visits, out)
 
