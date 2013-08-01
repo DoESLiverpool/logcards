@@ -72,6 +72,11 @@ end
 
 puts "DoorBot: #{ENV["DOORBOT_ENV"]}"
 
+if LCConfig.env.nil?
+  puts "Error! Must specify a valid doorbot environment."
+  exit
+end
+
 VISITS_YAML = 'visits.yaml'
 DAY_VISITS_YAML = 'day_visits.yaml'
 
@@ -176,7 +181,7 @@ while true
                 access = user["access"] || []
                 close_door = false
                 access_required = LCConfig.env['access'] || []
-                if access_required.length == 0 || ( access_required & access ).length > 0
+                if LCConfig.env.has_key?('access') && ( access_required.length == 0 || ( access_required & access ).length > 0 )
                     setDoorState(1)
                     close_door = true
                 end
