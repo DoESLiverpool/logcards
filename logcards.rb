@@ -35,6 +35,10 @@ class LCConfig
         @@tz
     end
 
+    def self.env
+      @@config["environments"][ENV['DOORBOT_ENV']]
+    end
+
     def self.setup_signal
         Signal.trap("HUP") do
             begin
@@ -171,45 +175,23 @@ while true
                 
                 access = user["access"] || []
                 close_door = false
-                if access.index("full") || ENV['DOORBOT_ENV'] == 'doorbot2'
+                access_required = LCConfig.env['access'] || []
+                if access_required.length == 0 || ( access_required & access ).length > 0
                     setDoorState(1)
                     close_door = true
                 end
                 last_day = dayVisits[uid]
                 if last_day != today
                     dayVisits[uid] = today
-                    if ENV['DOORBOT_ENV'] == 'doorbot1' and user and user["hotdesker"] == true and time.hour < 17
-                        puts "Log hot desk visit by #{user["name"]}!"
-                        puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(user["name"])}&entry.2.group=#{(time.hour < 13 ? '1' : '0.5')}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
-                        if false
-                            #res = Net::HTTP.post_form(uri, 'entry.1.single' => user["name"], 'entry.2.group' => '1' )
-                            uri = URI('https://docs.google.com/spreadsheet/viewform?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ')
-                            http = Net::HTTP.new(uri.host, uri.port)
-                            http.use_ssl = true
-                            req = Net::HTTP::Get.new(uri.path)
-                            res = http.request(req)
-
-                            uri = URI('https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq')
-                            http = Net::HTTP.new(uri.host, uri.port)
-                            http.use_ssl = true
-                            req = Net::HTTP::Post.new(uri.path)
-                            req['Referer'] = 'https://docs.google.com/spreadsheet/viewform?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ'
-                            req['User-Agent'] = 'User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2'
-                            req['Content-Type'] = 'application/x-www-form-urlencoded'
-                            req.set_form_data(
-                                'entry.1.single' => user["name"], 
-                                'entry.2.group' => (time.hour < 13 ? '1' : '0.5'),
-                                'pageNumber' => '0',
-                                'backupCache' => '',
-                                'submit' => 'Submit',
-                                'entry.2.group.other_option' => '')
-
-                            #puts "req=#{req.body}"
-                            res = http.request(req)
-                        #rescue Exception => e
-                        #    puts "HTTP POST failed with #{e}"
+                    if LCConfig.env['loghotdesk'] and user and user["hotdesker"] == true and time.hour < 21
+                        days_used = 1
+                        if time.hour >= 17
+                          days_used = 0.25
+                        elsif time.hour >= 13
+                          days_used = 0.5
                         end
-                        puts res ? res.body : "result is nil!"
+                        puts "Log hot desk visit by #{user["name"]}!"
+                        puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(user["name"])}&entry.2.group=#{days_used}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
                     end
                     File.open(DAY_VISITS_YAML, "w") do |out|
                         YAML.dump(dayVisits,out)

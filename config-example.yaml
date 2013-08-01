@@ -2,6 +2,22 @@
 settings:
 # Optional timezone, used for defining half-days of hotdesking
     timezone: "Europe/London"
+# A hash of environments
+# The key will be that value of DOORBOT_ENV
+# The value is a hash consisting of:
+#   loghotdesk: If "yes" then hot desk use will be logged
+#   access:     An array of access levels accepted by this door.
+#               If not present or empty, *any* access will open door.
+environments:
+    doorbot1:
+        access:
+            - full
+        loghotdesk: yes
+    doorbot2:
+        access:
+        loghotdesk: no
+    doorbot3:
+        access:
 # A hash of users
 # Hash is keyed on the RFID tag's UID
 # User entity is a hash containing the following elements:
