@@ -231,7 +231,11 @@ while true
                     elsif user and user["ringtone"]
                         cmd = "play wav/#{user["ringtone"]}"
                         puts "ringtone: #{cmd}"
-                        blah = `#{cmd}`
+                        begin
+                          blah = `#{cmd}`
+                        rescue Exception
+                          sleep 4
+                        end
                     else
                         blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" 1> /dev/null 2>&1`
                     end
