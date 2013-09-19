@@ -56,25 +56,6 @@ LCConfig.load
 puts LCConfig.config.inspect
 LCConfig.setup_signal
 
-special_sounds = {
-    '9-19' => [
-        'parrot/arrr.aiff',
-        'parrot/bottle-of-rum.aiff',
-        'parrot/pieces-of-eight.aiff',
-        'parrot/shiver-me-timbers.aiff',
-        'parrot/squawk1.aiff',
-        'parrot/squawk2.aiff',
-        'parrot/squawk3.aiff'
-    ],
-    '10-31' => [
-        'halloween/cackle3.wav',
-        'halloween/creakdoor2.wav',
-        'halloween/ghost5.wav',
-        'halloween/howling1.wav',
-        'halloween/thunder12.wav'
-    ]
-}
-
 def setDoorState(state)
     `echo #{state} > /sys/class/gpio/gpio25/value`
 end
@@ -229,7 +210,7 @@ while true
                     visits[uid] = nil
                 else
                     special_sound = nil
-                    day_sounds = special_sounds["#{time.month}-#{time.day}"]
+                    day_sounds = LCConfig.config["sounds"]["#{time.month}-#{time.day}"]
                     if day_sounds
                         special_sound = day_sounds.sample
                     end
