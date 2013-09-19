@@ -57,6 +57,15 @@ puts LCConfig.config.inspect
 LCConfig.setup_signal
 
 special_sounds = {
+    '9-19' => [
+        'parrot/arrr.aiff',
+        'parrot/bottle-of-rum.aiff',
+        'parrot/pieces-of-eight.aiff',
+        'parrot/shiver-me-timbers.aiff',
+        'parrot/squawk1.aiff',
+        'parrot/squawk2.aiff',
+        'parrot/squawk3.aiff'
+    ],
     '10-31' => [
         'halloween/cackle3.wav',
         'halloween/creakdoor2.wav',
@@ -227,7 +236,7 @@ while true
                     puts "#{uid} Arrived"
                     visits[uid] = { "arrived_at" => time }
                     if special_sound
-                        cmd = "play #{special_sound}"
+                        cmd = "play wav/#{special_sound}"
                         puts "ringtone: #{cmd}"
                         blah = `#{cmd}`
                     elsif user and user["ringtone"]
