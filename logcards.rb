@@ -120,7 +120,7 @@ while true
                 list = ''
               end
             else
-              list = `./rcapp`
+              list = `./#{LCConfig.env["rcapp"]}`
             end
 
             uid = list.chomp
