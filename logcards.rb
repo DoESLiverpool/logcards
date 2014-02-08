@@ -29,10 +29,10 @@ class LCConfig
 
     def self.door_open_minimum
       min = LCConfig.env["door_open_minimum"]
-      unless min
+      if min.nil? and LCConfig.config["settings"]
         min = LCConfig.config["settings"]["door_open_minimum"]
       end
-      unless min
+      if min.nil?
         min = 2
       end
       min
