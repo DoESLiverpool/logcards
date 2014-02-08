@@ -27,6 +27,17 @@ class LCConfig
         end
     end
 
+    def self.door_open_minimum
+      min = LCConfig.env["door_open_minimum"]
+      unless min
+        min = LCConfig.config["settings"]["door_open_minimum"]
+      end
+      unless min
+        min = 2
+      end
+      min
+    end
+
     def self.config
         @@config
     end
@@ -171,11 +182,11 @@ while true
                 end
                 
                 access = user["access"] || []
-                close_door = false
+                door_opened_at = nil
                 access_required = LCConfig.env['access'] || []
                 if LCConfig.env.has_key?('access') && ( access_required.length == 0 || ( access_required & access ).length > 0 )
                     setDoorState(1)
-                    close_door = true
+                    door_opened_at = Time.now
                 end
                 last_day = dayVisits[uid]
                 if last_day != today
@@ -238,7 +249,13 @@ while true
                    YAML.dump(visits, out)
 
                 end
-                if close_door
+                if door_opened_at
+                    opened_for = ( Time.now - door_opened_at ).to_i
+                    while opened_for < LCConfig.door_open_minimum
+                      puts "Sleeping for an extra second"
+                      sleep 1
+                      opened_for += 1
+                    end
                     setDoorState(0)
                 end
                 if user and user["mapme_at_code"]
