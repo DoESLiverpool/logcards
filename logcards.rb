@@ -164,7 +164,7 @@ while true
                     nickname = name if nickname.nil?
                 else
                     puts "#{uid} was unrecognised"
-                    blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to John and be inducted." 1> /dev/null 2>&1`
+                    blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to an organiser to be inducted." 1> /dev/null 2>&1`
                     # Ping choir.io to log the event
                     puts `curl -v 'http://api.choir.io/b8765e0d449877ea' --max-redirs 0 -d sound='b/2' -d label='usernotrecognised' -d text='Visitor not recognised at #{ENV["DOORBOT_ENV"]}'`
                     next
