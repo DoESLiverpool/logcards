@@ -221,7 +221,10 @@ while true
                     visits[uid] = nil
                 else
                     special_sound = nil
-                    day_sounds = LCConfig.config["sounds"]["#{time.month}-#{time.day}"]
+                    day_sounds = nil
+                    if LCConfig.config["sounds"]
+                      day_sounds = LCConfig.config["sounds"]["#{time.month}-#{time.day}"]
+                    end
                     if day_sounds
                         special_sound = day_sounds.sample
                     end
