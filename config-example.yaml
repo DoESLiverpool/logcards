@@ -18,6 +18,21 @@ environments:
         loghotdesk: no
     doorbot3:
         access:
+# Special sounds that override user ringtones on specific days.
+# A random file form the selection will be chosen on the day.
+sounds:
+# Talk like a pirate day
+    "9-19":
+        - "parrot/bottle-of-rum.wav"
+        - "parrot/pieces-of-eight.wav"
+        - "parrot/shiver-me-timbers.wav"
+# Halloween
+    "10-31":
+        - "halloween/cackle3.wav"
+        - "halloween/creakdoor2.wav"
+        - "halloween/ghost5.wav"
+        - "halloween/howling1.wav"
+        - "halloween/thunder12.wav"
 # A hash of users
 # Hash is keyed on the RFID tag's UID
 # User entity is a hash containing the following elements:
