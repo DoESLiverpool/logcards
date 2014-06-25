@@ -199,7 +199,7 @@ while true
                           days_used = 0.5
                         end
                         puts "Log hot desk visit by #{user["name"]}!"
-                        puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(user["name"])}&entry.2.group=#{days_used}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
+                        puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(URI.escape(user["name"]), "'")}&entry.2.group=#{days_used}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
                     end
                     File.open(DAY_VISITS_YAML, "w") do |out|
                         YAML.dump(dayVisits,out)
