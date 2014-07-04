@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
-cd "$( dirname "${BASH_SOURCE[0]}" )"
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
 ruby logcards.rb
