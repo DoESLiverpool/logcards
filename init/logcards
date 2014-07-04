@@ -15,7 +15,7 @@ case "$1" in
         modprobe i2c_bcm2708 baudrate=200000
         echo 25 > /sys/class/gpio/export
         echo out > /sys/class/gpio/gpio25/direction
-        /usr/bin/screen -S rfid -d -m /home/pi/logcards/logcards.rb
+        /usr/bin/screen -S rfid -d -m /home/pi/logcards/run_logcards.sh
         ;;
 esac
 
