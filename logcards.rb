@@ -20,7 +20,7 @@ require 'tzinfo'
 
 class LCConfig
     def self.load
-        @@config = YAML.load_file('config.yaml')
+        @@config = YAML.load_file("#{File.dirname(File.expand_path($0))}/config.yaml")
         @@tz = nil
         if @@config["settings"] and @@config["settings"]["timezone"]
           @@tz = TZInfo::Timezone.get(@@config["settings"]["timezone"])
