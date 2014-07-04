@@ -14,3 +14,8 @@ This will create a named pipe at `/tmp/logcards-test.pipe` into which you can pi
 More documentation on the system can be found on the DoES wiki:
 
 http://wiki.doesliverpool.com/DoorBot
+
+## Install
+
+1. sudo gem install bundler
+1. bundle install
