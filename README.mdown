@@ -19,3 +19,7 @@ http://wiki.doesliverpool.com/DoorBot
 
 1. sudo gem install bundler
 1. bundle install
+
+## Dependencies
+
+To read the RFID card IDs logcards uses rcapp.  An already compiled binary version is included in the repository, but should you need to build it from source it is available at https://github.com/drcrane/raspberryrfid (make sure you use the right i2c bus ID for the Raspberry Pi revision you're using - which might mean modifying readcard.c)
