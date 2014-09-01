@@ -5,9 +5,18 @@ settings:
 # A hash of environments
 # The key will be that value of DOORBOT_ENV
 # The value is a hash consisting of:
-#   loghotdesk: If "yes" then hot desk use will be logged
-#   access:     An array of access levels accepted by this door.
-#               If not present or empty, *any* access will open door.
+#   loghotdesk:   If "yes" then hot desk use will be logged
+#   access:       An array of access levels accepted by this door.
+#                 If not present or empty, *any* access will open door.
+#   kindle:       Information required for the kindle access
+#       ip:       The address that the kindle is set to
+#       user:     The user for the connection to the kindle
+#       password: The password for that user
+#       port:     The port the ssh server is running on, default is 22
+#       close:    The closed door image for the kindle. This image is directory specific
+#                 e.g /mnt/us/does/close.png
+#       open:     The open door image for the kindle. This image is directory specific
+#                 e.g /mnt/us/does/open.png
 environments:
     doorbot1:
         access:
@@ -18,6 +27,17 @@ environments:
         loghotdesk: no
     doorbot3:
         access:
+        kindle:
+            ip: 192.168.0.100
+            user: root
+            password: kindle
+            port: 22
+            close: /mnt/us/does/close.png
+            open: /mnt/us/does/open.png
+    test:
+        access:
+        loghotdesk:
+        rcapp: rcapp1
 # Special sounds that override user ringtones on specific days.
 # A random file form the selection will be chosen on the day.
 sounds:

@@ -9,10 +9,11 @@
 #
 
 require 'rubygems'
-require 'bundler/setup'
 
+require 'bundler/setup'
 require 'yaml'
 require 'net/http'
+require 'net/ssh'
 require 'dnsruby'
 require 'tzinfo'
 
@@ -20,13 +21,12 @@ require 'tzinfo'
 
 class LCConfig
     def self.load
-        @@config = YAML.load_file("#{File.dirname(File.expand_path($0))}/config.yaml")
+        @@config = YAML.load_file('config.yaml')
         @@tz = nil
         if @@config["settings"] and @@config["settings"]["timezone"]
           @@tz = TZInfo::Timezone.get(@@config["settings"]["timezone"])
         end
     end
-
     def self.door_open_minimum
       min = LCConfig.env["door_open_minimum"]
       if min.nil? and LCConfig.config["settings"]
@@ -50,6 +50,13 @@ class LCConfig
       @@config["environments"][ENV['DOORBOT_ENV']]
     end
 
+    def self.kindle_ssh
+      kindle = LCConfig.env["kindle"]
+      if kindle
+        Net::SSH.start(kindle['ip'], kindle['user'], :password => kindle['password'], :port => kindle['port'])
+      end
+    end
+
     def self.setup_signal
         Signal.trap("HUP") do
             begin
@@ -61,15 +68,37 @@ class LCConfig
         end
     end
 end
-
-
+puts "Config Pre Load"
 LCConfig.load
-puts LCConfig.config.inspect
+puts "After load. Config Correct!"
+#puts LCConfig.config.inspect
 LCConfig.setup_signal
+VISITS_YAML = 'visits.yaml'
+DAY_VISITS_YAML = 'day_visits.yaml'
+
+def setSSH(state, ssh)
+  if ssh == false
+    setDoorState(state)
+  end
+ if ssh
+ setDoorState(state)
+ close_image = LCConfig.env["kindle"]["close"]
+ open_image = LCConfig.env["kindle"]["open"]
+    if state == 1
+      ssh.exec!("eips -g #{open_image}")
+    end
+    if state == 0
+      ssh.exec!('eips -c')
+      ssh.exec!("eips -g #{close_image}")
+      end
+ end
+end
+
+
 
 def setDoorState(state)
-    `echo #{state} > /sys/class/gpio/gpio25/value`
-end
+     `echo #{state} > /sys/class/gpio/gpio25/value`
+  end
 
 puts "DoorBot: #{ENV["DOORBOT_ENV"]}"
 
@@ -77,9 +106,6 @@ if LCConfig.env.nil?
   puts "Error! Must specify a valid doorbot environment."
   exit
 end
-
-VISITS_YAML = 'visits.yaml'
-DAY_VISITS_YAML = 'day_visits.yaml'
 
 scansFile = nil
 visitsFile = nil
@@ -113,6 +139,16 @@ end
 
 while true
   begin
+    ssh = false
+    if LCConfig.kindle_ssh
+      puts "Trying to ssh in to the kindle"
+      ssh = LCConfig.kindle_ssh
+      puts "Connection Successful, blanking screen"
+      setSSH(0, ssh)
+      puts "Blank successful"
+      puts "Setting screen to default image"
+    end
+    puts "Welcome to Doorbot"
     scansFile = File.open("scans.log", "a")
     visitsFile = File.open("visits.log", "a")
     if test_input and ( test_input.eof? || test_input.closed? )
@@ -185,7 +221,7 @@ while true
                 door_opened_at = nil
                 access_required = LCConfig.env['access'] || []
                 if LCConfig.env.has_key?('access') && ( access_required.length == 0 || ( access_required & access ).length > 0 )
-                    setDoorState(1)
+                    setSSH(1, ssh)
                     door_opened_at = Time.now
                 end
                 last_day = dayVisits[uid]
@@ -199,7 +235,7 @@ while true
                           days_used = 0.5
                         end
                         puts "Log hot desk visit by #{user["name"]}!"
-                        puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(URI.escape(user["name"]), "'")}&entry.2.group=#{days_used}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
+                        puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(user["name"])}&entry.2.group=#{days_used}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
                     end
                     File.open(DAY_VISITS_YAML, "w") do |out|
                         YAML.dump(dayVisits,out)
@@ -259,7 +295,7 @@ while true
                       sleep 1
                       opened_for += 1
                     end
-                    setDoorState(0)
+                    setSSH(0, ssh)
                 end
                 if user and user["mapme_at_code"]
                     puts "Should check into mapme.at"
@@ -277,16 +313,28 @@ while true
                   puts `curl -v 'http://api.choir.io/b8765e0d449877ea' --max-redirs 0 -d sound='g/1' -d label='visitor' -d text='Visitor at #{ENV["DOORBOT_ENV"]}'`
                 end
             end
-    end
+      if ssh
+        ssh.loop
+      end
+      end
     rescue SystemExit
-        setDoorState(0)
+        Net::SSH.start('192.168.0.103', 'root', :password => 'bubblino', :port => '22') do |ssh|
+        setSSH(0, ssh)
+        ssh.exec!("eips -c")
+        puts 'OOPS'
         exit
-    rescue Exception => e
-        setDoorState(0)
-        puts "Oops #{e.inspect}"
+        end
+  #rescue Exception => e
+   #     Net::SSH.start('192.168.0.103', 'root', :password => 'bubblino', :port => '22') do |ssh|
+    #    setSSH(0, ssh)
+     #   ssh.exec!("eips -c")
+      #  ssh.exec!("eips -g #{e.inspect}")
+       # puts "Oops #{e.inspect}"
+      #    end
     end
     scansFile.close if scansFile
     visitsFile.close if visitsFile
 
     sleep 5
 end
+

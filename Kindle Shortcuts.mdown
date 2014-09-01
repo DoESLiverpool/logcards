@@ -1,0 +1,14 @@
+The kindle shortcuts that can be used one you have typed ;debugon
+
+~disableindexing
+~disablescreensaver
+~dumpindexstats
+~exec
+~help
+~indexstatus
+~meminfo
+~reloadcontentroster
+~resumescreensaver
+~startindexing
+~stopindexing
+~usbNetwork
