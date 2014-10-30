@@ -208,8 +208,6 @@ while true
         else
           puts "#{uid} was unrecognised"
           blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to an organiser to be inducted." 1> /dev/null 2>&1`
-          # Ping choir.io to log the event
-          puts `timeout 10 curl 'http://api.choir.io/b8765e0d449877ea' --max-redirs 0 -d sound='b/2' -d label='usernotrecognised' -d text='Visitor not recognised at #{ENV["DOORBOT_ENV"]}'`
           next
         end
         
@@ -299,12 +297,6 @@ while true
           }
 
           #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
-        end
-        # Ping choir.io to log the event
-        if ENV["DOORBOT_ENV"] == "doorbot1"
-          puts `timeout 10 curl 'http://api.choir.io/b8765e0d449877ea' --max-redirs 0 -d sound='g/3' -d label='visitor' -d text='Visitor logged'`
-        else
-          puts `timeout 10 curl 'http://api.choir.io/b8765e0d449877ea' --max-redirs 0 -d sound='g/1' -d label='visitor' -d text='Visitor at #{ENV["DOORBOT_ENV"]}'`
         end
       end
       if ssh
