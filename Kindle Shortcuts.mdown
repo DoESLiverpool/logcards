@@ -13,4 +13,4 @@ The kindle shortcuts that can be used one you have typed ;debugon
 ~stopindexing
 ~usbNetwork
 
-To enable ssh on the kindle you must type ;debugon and then ~usbNetworking.
+To enable ssh on the kindle you must type ;debugon and then ~usbNetwork.
