@@ -51,11 +51,33 @@ class LCConfig
     @@config["environments"][ENV['DOORBOT_ENV']]
   end
 
+  $connection_error = nil
+
   def self.kindle_ssh
     kindle = LCConfig.env["kindle"]
     if kindle
-      Net::SSH.start(kindle['ip'], kindle['user'], :password => kindle['password'], :port => kindle['port'])
+      if !$connection_error
+        puts "Trying to ssh into the kindle"
+        Net::SSH.start(kindle['ip'], kindle['user'], :password => kindle['password'], :port => kindle['port'], :timeout => kindle['timeout'])
+        puts "Connection complete"
+      end
     end
+  rescue Timeout::Error => e
+    $connection_error = true
+    puts "Oops #{e.inspect}"
+    puts "Please check the config for the kindle and check you can ssh into the kindle"
+  rescue SocketError => e
+    $connection_error = true
+    puts "Oops #{e.inspect}"
+    puts "Please check the config for the kindle and check you can ssh into the kindle"
+  rescue Net::SSH::AuthenticationFailed => e
+    $connection_error = true
+    puts "Oops #{e.inspect}"
+    puts "Please check the config for the kindle and check you can ssh into the kindle"
+  rescue Net::SSH::Exception => e
+    $connection_error = true
+    puts "Oops #{e.inspect}"
+    puts "Please check the config for the kindle and check you can ssh into the kindle"
   end
 
   def self.setup_signal
@@ -124,8 +146,6 @@ end
 Signal.trap("SIGUSR1") do
    $testUID = ''
 end
-
-
 test_pipe_filename = "/tmp/logcards-test.pipe"
 if ENV['DOORBOT_TEST'] == 'test'
   `rm -f #{test_pipe_filename}`
@@ -137,13 +157,13 @@ end
 
 while true
   begin
-    puts "Trying to ssh in to the kindle"
-    ssh = LCConfig.kindle_ssh
-    if ssh
-      puts "Connection Successful, blanking screen"
-      setSSH(0, ssh)
-      puts "Blank successful"
-      puts "Setting screen to default image"
+    if !$connection_error
+      ssh = LCConfig.kindle_ssh
+      if ssh
+        puts "Trying to ssh in to the kindle"
+        puts "Connection Successful"
+        setSSH(0, ssh)
+      end
     end
     puts "Welcome to Doorbot"
     scansFile = File.open("scans.log", "a")

@@ -13,6 +13,7 @@ settings:
 #       user:     The user for the connection to the kindle
 #       password: The password for that user
 #       port:     The port the ssh server is running on, default is 22
+#       timeout:  The amount of time before the connection will timeout, default = 10
 #       close:    The closed door image for the kindle. This image is directory specific
 #                 e.g /mnt/us/does/close.png
 #       open:     The open door image for the kindle. This image is directory specific
@@ -32,6 +33,7 @@ environments:
             user: root
             password: kindle
             port: 22
+            timeout: 10
             close: /mnt/us/does/close.png
             open: /mnt/us/does/open.png
     test:
