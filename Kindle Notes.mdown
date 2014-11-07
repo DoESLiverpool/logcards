@@ -25,3 +25,13 @@ To enable ssh on the kindle you must type ;debugon and then ~usbNetwork.
 When plugging the Kindle into a computer it will go into disk mode, disabling SSH.
 When plugged into a Pi you may need to actually install the eject command as umount
 won't take it out of that mode (in fact it may not even have automounted anyway).
+
+## Screensaver
+
+As mentioned above there is a ~disablescreensaver and ~resumescreensaver shortcuts but
+apparently the following will also work:
+
+````
+lipc-set-prop com.lab126.powerd preventScreenSaver 1
+lipc-set-prop com.lab126.powerd preventScreenSaver 0
+````
