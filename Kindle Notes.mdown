@@ -1,0 +1,27 @@
+# Kindle Notes
+
+## Shortcuts
+
+From the home screen of the Kindle press the "del" button to show a search/filter bar.
+Type ;debugon and click enter/search and you can type the following shortcuts:
+
+~disableindexing
+~disablescreensaver
+~dumpindexstats
+~exec
+~help
+~indexstatus
+~meminfo
+~reloadcontentroster
+~resumescreensaver
+~startindexing
+~stopindexing
+~usbNetwork
+
+To enable ssh on the kindle you must type ;debugon and then ~usbNetwork.
+
+## USB Disk Mode
+
+When plugging the Kindle into a computer it will go into disk mode, disabling SSH.
+When plugged into a Pi you may need to actually install the eject command as umount
+won't take it out of that mode (in fact it may not even have automounted anyway).
