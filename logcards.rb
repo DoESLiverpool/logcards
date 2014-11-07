@@ -113,6 +113,8 @@ def setSSH(state, ssh)
       ssh.exec!("eips -g #{close_image}")
     end
   end
+rescue Exception => e
+  puts "SSH failed #{e}"
 end
 
 
