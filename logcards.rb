@@ -55,13 +55,15 @@ class LCConfig
 
   def self.kindle_ssh
     kindle = LCConfig.env["kindle"]
+    ssh = nil
     if kindle
       if !$connection_error
         puts "Trying to ssh into the kindle"
-        Net::SSH.start(kindle['ip'], kindle['user'], :password => kindle['password'], :port => kindle['port'], :timeout => kindle['timeout'])
+        ssh = Net::SSH.start(kindle['ip'], kindle['user'], :password => kindle['password'], :port => kindle['port'], :timeout => kindle['timeout'])
         puts "Connection complete"
       end
     end
+    return ssh
   rescue Timeout::Error => e
     $connection_error = true
     puts "Oops #{e.inspect}"
