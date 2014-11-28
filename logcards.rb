@@ -245,15 +245,16 @@ while true
         last_day = dayVisits[uid]
         if last_day != today
           dayVisits[uid] = today
-          if LCConfig.env['loghotdesk'] and user and user["hotdesker"] == true and time.hour < 21
+          if LCConfig.env['loghotdesk'] and user and user["hotdesker"] == true and time.hour < 17
             days_used = 1
-            if time.hour >= 17
-              days_used = 0.25
-            elsif time.hour >= 13
+            #if time.hour >= 17
+            #  days_used = 0.25
+            #els
+            if time.hour >= 13
               days_used = 0.5
             end
             puts "Log hot desk visit by #{user["name"]}!"
-            puts `curl -v 'https://docs.google.com/spreadsheet/formResponse?formkey=dEVjX0I4VkoxdngtM2hpclROOXFSRWc6MQ&ifq' --max-redirs 0 -d 'entry.1.single=#{URI.escape(user["name"])}&entry.2.group=#{days_used}&entry.2.group.other_option=&pageNumber=0&backupCache=&submit=Submit'`
+            puts `curl -v 'https://docs.google.com/a/doesliverpool.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse' --max-redirs 0 -d 'entry.1000001=#{URI.escape(user["name"])}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&draftResponse=%5B%2C%2C%229219176582538199463%22&pageHistory=0&fbzx=9219176582538199463&submit=Submit'`
           end
           File.open(DAY_VISITS_YAML, "w") do |out|
             YAML.dump(dayVisits,out)
