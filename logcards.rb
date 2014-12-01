@@ -272,7 +272,7 @@ while true
           visitsFile.write("#{uid}\t#{last_visit["arrived_at"]}\t#{time}\t#{name}\n")
           visitsFile.flush
           blah = `espeak -v en "Thank you, goodbye #{nickname}" 1> /dev/null 2>&1`
-          #blah = `play thanks-goodbye.aiff > /dev/null 2> /dev/null`
+          #blah = `aplay thanks-goodbye.aiff > /dev/null 2> /dev/null`
           visits[uid] = nil
         else
           special_sound = nil
@@ -286,11 +286,11 @@ while true
           puts "#{uid} Arrived"
           visits[uid] = { "arrived_at" => time }
           if special_sound
-            cmd = "play wav/#{special_sound}"
+            cmd = "aplay wav/#{special_sound}"
             puts "ringtone: #{cmd}"
             blah = `#{cmd}`
           elsif user and user["ringtone"]
-            cmd = "play wav/#{user["ringtone"]}"
+            cmd = "aplay wav/#{user["ringtone"]}"
             puts "ringtone: #{cmd}"
             begin
               blah = `#{cmd}`
@@ -300,7 +300,7 @@ while true
           else
             blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" 1> /dev/null 2>&1`
           end
-          #blah = `play thanks-welcome.aiff > /dev/null 2> /dev/null`
+          #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
         end
         File.open(VISITS_YAML, "w") do |out|
           YAML.dump(visits, out)
