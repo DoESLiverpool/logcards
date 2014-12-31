@@ -59,8 +59,17 @@ class LCConfig
     if kindle
       if !$connection_error
         puts "Trying to ssh into the kindle"
-        ssh = Net::SSH.start(kindle['ip'], kindle['user'], :password => kindle['password'], :port => kindle['port'], :timeout => kindle['timeout'])
-        puts "Connection complete"
+        begin
+          ssh = Net::SSH.start(kindle['ip'], kindle['user'], :password => kindle['password'], :port => kindle['port'], :timeout => kindle['timeout'])
+          puts "Connection complete"
+        rescue Errno::EHOSTUNREACH => e
+          puts "Can't reach Kindle..."
+          # This is usually because the Kindle has mounted as a USB disk
+          # Try unmounting it
+          `umount /media/Kindle`
+          `udisks --eject /dev/sda`
+          raise e
+        end
       end
     end
     return ssh
