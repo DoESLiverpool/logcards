@@ -26,6 +26,13 @@ When plugging the Kindle into a computer it will go into disk mode, disabling SS
 When plugged into a Pi you may need to actually install the eject command as umount
 won't take it out of that mode (in fact it may not even have automounted anyway).
 
+Along the lines of:
+
+```
+eject /dev/sda1
+sudo udisks --eject /dev/sda
+```
+
 ## Screensaver
 
 As mentioned above there is a ~disablescreensaver and ~resumescreensaver shortcuts but
