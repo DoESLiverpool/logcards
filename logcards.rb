@@ -141,6 +141,7 @@ if LCConfig.env.nil?
 end
 
 scansFile = nil
+hotdesksFile = nil
 visitsFile = nil
 $testUID = nil
 if File.file?(VISITS_YAML)
@@ -180,6 +181,7 @@ while true
     end
     puts "Welcome to Doorbot"
     scansFile = File.open("scans.log", "a")
+    hotdesksFile = File.open("hotdesks.log", "a")
     visitsFile = File.open("visits.log", "a")
     if test_input and ( test_input.eof? || test_input.closed? )
       if ! test_input.closed?
@@ -262,6 +264,8 @@ while true
             if time.hour >= 13
               days_used = 0.5
             end
+            hotdesksFile.write("#{time}\t#{uid}\t#{user["name"]}\t#{days_used}\n")
+            hotdesksFile.flush
             puts "Log hot desk visit by #{user["name"]}!"
             puts `curl -v 'https://docs.google.com/a/doesliverpool.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse' --max-redirs 0 -d 'entry.1000001=#{URI.escape(user["name"])}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&draftResponse=%5B%2C%2C%229219176582538199463%22&pageHistory=0&fbzx=9219176582538199463&submit=Submit'`
           end
@@ -347,6 +351,7 @@ while true
   end
 
   scansFile.close if scansFile
+  hotdesksFile.close if hotdesksFile
   visitsFile.close if visitsFile
 
   sleep 5
