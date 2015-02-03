@@ -13,6 +13,8 @@ require 'rubygems'
 require 'bundler/setup'
 require 'yaml'
 require 'net/http'
+require 'json'
+require 'uri'
 require 'net/ssh'
 require 'dnsruby'
 require 'tzinfo'
@@ -109,6 +111,7 @@ puts "After load. Config Correct!"
 LCConfig.setup_signal
 VISITS_YAML = 'visits.yaml'
 DAY_VISITS_YAML = 'day_visits.yaml'
+UNLOGGED_VISITS_YAML = 'unlogged_visits.yaml'
 
 def setSSH(state, ssh)
   if ssh
@@ -155,6 +158,13 @@ if File.file?(DAY_VISITS_YAML)
 end
 if dayVisits.nil? or dayVisits == false
   dayVisits = {}
+end
+if File.file?(UNLOGGED_VISITS_YAML)
+  unloggedFile = YAML.load_file(UNLOGGED_VISITS_YAML)
+end
+if unloggedFile.nil? or unloggedFile == false
+  unloggedFile = {}
+  unloggedFile['user']= {}
 end
 
 Signal.trap("SIGUSR1") do
@@ -267,7 +277,35 @@ while true
             hotdesksFile.write("#{time}\t#{uid}\t#{user["name"]}\t#{days_used}\n")
             hotdesksFile.flush
             puts "Log hot desk visit by #{user["name"]}!"
-            puts `curl -v 'https://docs.google.com/a/doesliverpool.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse' --max-redirs 0 -d 'entry.1000001=#{URI.escape(user["name"])}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&draftResponse=%5B%2C%2C%229219176582538199463%22&pageHistory=0&fbzx=9219176582538199463&submit=Submit'`
+            uri = URI.parse("https://docs.google.com/a/doesliverpool.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse' --max-redirs 0 -d 'entry.1000001=#{URI.escape(user["name"])}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&draftResponse=%5B%2C%2C%229219176582538199463%22&pageHistory=0&fbzx=9219176582538199463&submit=Submit")
+            http = Net::HTTP.new(uri.host, uri.port)
+            http.use_ssl =true
+            request = Net::HTTP::Get.new(uri.request_uri)
+            response = http.request(request)
+            if response.code.equal? 200
+              puts "Could not connect. Saved user to file for later logging"
+              if unloggedFile['user'][user['name']] != {}
+                days_used = days_used + unloggedFile['user'][user['name']]['days']
+              end
+              unloggedFile['user'][user['name']]= {}
+              unloggedFile['user'][user['name']]['days']= days_used
+            else
+              if unloggedFile['user'] != {}
+                puts "Logging unlogged users"
+                unloggedFile['user'].each do |y, v|
+                  uri = URI.parse("https://docs.google.com/a/doesliverpool.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse' --max-redirs 0 -d 'entry.1000001=#{URI.escape(y)}&entry.1000002=#{v['days']}&entry.1000002.other_option_response=&draftResponse=%5B%2C%2C%229219176582538199463%22&pageHistory=0&fbzx=9219176582538199463&submit=Submit")
+                  un_request = Net::HTTP::Get.new(uri.request_uri)
+                  un_response = http.request(un_request)
+                  unless un_response.code.equal? 200
+                    puts "Deleting user as #{y} has been logged"
+                    unloggedFile['user'].delete(y)
+                  end
+                end
+              end
+            end
+          end
+          File.open(UNLOGGED_VISITS_YAML, "w") do |out|
+            YAML.dump(unloggedFile, out)
           end
           File.open(DAY_VISITS_YAML, "w") do |out|
             YAML.dump(dayVisits,out)
