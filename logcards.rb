@@ -181,6 +181,18 @@ end
 
 while true
   begin
+    if `mount | grep /media/Kindle` != ""
+      print "Kindle is mounted. Unmounting"
+      puts `umount /media/Kindle`
+      if `mount | grep /media/Kindle` != ""
+        print "Kindle is still mounted. Trying secondary unmount"
+        puts `udisks --eject /dev/sda`
+      end
+      if `mount | grep /media/Kindle` != ""
+        print "Kindle is still mounted so disabling the kindle ssh"
+        $connection_error = true
+      end
+    end
     if !$connection_error
       ssh = LCConfig.kindle_ssh
       if ssh
@@ -277,7 +289,7 @@ while true
             hotdesksFile.write("#{time}\t#{uid}\t#{user["name"]}\t#{days_used}\n")
             hotdesksFile.flush
             puts "Log hot desk visit by #{user["name"]}!"
-            uri = URI.parse("https://docs.google.com/a/doesliverpool.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse' --max-redirs 0 -d 'entry.1000001=#{URI.escape(user["name"])}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&draftResponse=%5B%2C%2C%229219176582538199463%22&pageHistory=0&fbzx=9219176582538199463&submit=Submit")
+            uri = URI.parse("https://docs.google.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse?entry.1000001=#{URI.escape(user['name'])}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&submit=Submit")
             http = Net::HTTP.new(uri.host, uri.port)
             http.use_ssl =true
             request = Net::HTTP::Get.new(uri.request_uri)
@@ -293,7 +305,7 @@ while true
               if unloggedFile['user'] != {}
                 puts "Logging unlogged users"
                 unloggedFile['user'].each do |y, v|
-                  uri = URI.parse("https://docs.google.com/a/doesliverpool.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse' --max-redirs 0 -d 'entry.1000001=#{URI.escape(y)}&entry.1000002=#{v['days']}&entry.1000002.other_option_response=&draftResponse=%5B%2C%2C%229219176582538199463%22&pageHistory=0&fbzx=9219176582538199463&submit=Submit")
+                  uri = URI.parse("https://docs.google.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse?entry.1000001=#{URI.escape(y)}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&submit=Submit")
                   un_request = Net::HTTP::Get.new(uri.request_uri)
                   un_response = http.request(un_request)
                   unless un_response.code.equal? 200
