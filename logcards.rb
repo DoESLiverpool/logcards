@@ -136,6 +136,12 @@ def setDoorState(state, ssh)
   setSSH(state, ssh)
 end
 
+def saveUnloggedVisits
+  File.open(UNLOGGED_VISITS_YAML, "w") do |out|
+    YAML.dump($unloggedFile, out)
+  end
+end
+
 puts "DoorBot: #{ENV["DOORBOT_ENV"]}"
 
 if LCConfig.env.nil?
@@ -160,11 +166,11 @@ if dayVisits.nil? or dayVisits == false
   dayVisits = {}
 end
 if File.file?(UNLOGGED_VISITS_YAML)
-  unloggedFile = YAML.load_file(UNLOGGED_VISITS_YAML)
+  $unloggedFile = YAML.load_file(UNLOGGED_VISITS_YAML)
 end
-if unloggedFile.nil? or unloggedFile == false
-  unloggedFile = {}
-  unloggedFile['user']= {}
+if $unloggedFile.nil? or $unloggedFile == false
+  $unloggedFile = {}
+  $unloggedFile['user']= {}
 end
 
 Signal.trap("SIGUSR1") do
@@ -289,36 +295,13 @@ while true
             hotdesksFile.write("#{time}\t#{uid}\t#{user["name"]}\t#{days_used}\n")
             hotdesksFile.flush
             puts "Log hot desk visit by #{user["name"]}!"
-            uri = URI.parse("https://docs.google.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse?entry.1000001=#{URI.escape(user['name'])}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&submit=Submit")
-            http = Net::HTTP.new(uri.host, uri.port)
-            http.use_ssl =true
-            request = Net::HTTP::Get.new(uri.request_uri)
-            response = http.request(request)
-            if response.code.equal? 200
-              puts "Could not connect. Saved user to file for later logging"
-              if unloggedFile['user'][user['name']] != {}
-                days_used = days_used + unloggedFile['user'][user['name']]['days']
-              end
-              unloggedFile['user'][user['name']]= {}
-              unloggedFile['user'][user['name']]['days']= days_used
-            else
-              if unloggedFile['user'] != {}
-                puts "Logging unlogged users"
-                unloggedFile['user'].each do |y, v|
-                  uri = URI.parse("https://docs.google.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse?entry.1000001=#{URI.escape(y)}&entry.1000002=#{days_used}&entry.1000002.other_option_response=&submit=Submit")
-                  un_request = Net::HTTP::Get.new(uri.request_uri)
-                  un_response = http.request(un_request)
-                  unless un_response.code.equal? 200
-                    puts "Deleting user as #{y} has been logged"
-                    unloggedFile['user'].delete(y)
-                  end
-                end
-              end
+            # First save it in the unlogged file
+            if $unloggedFile['user'][user['name']]
+              days_used = days_used + $unloggedFile['user'][user['name']].to_i
             end
-          end
-          File.open(UNLOGGED_VISITS_YAML, "w") do |out|
-            YAML.dump(unloggedFile, out)
-          end
+            $unloggedFile['user'][user['name']] = days_used
+            saveUnloggedVisits()
+         end
           File.open(DAY_VISITS_YAML, "w") do |out|
             YAML.dump(dayVisits,out)
           end
@@ -387,10 +370,30 @@ while true
           #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
         end
       end
+
+      if $unloggedFile['user'].count > 0
+        puts "Logging unlogged users"
+        # Using keys so that the fact that we're modifying the hash doesn't matter
+        $unloggedFile['user'].keys.each do |name|
+          uri = URI.parse("https://docs.google.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse?entry.1000001=#{URI.escape(name)}&entry.1000002=#{$unloggedFile['user'][name]}&entry.1000002.other_option_response=&submit=Submit")
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl =true
+          un_request = Net::HTTP::Get.new(uri.request_uri)
+          un_response = http.request(un_request)
+          if un_response.code == "200"
+            puts "User #{name} has been logged"
+            $unloggedFile['user'].delete(name)
+            saveUnloggedVisits()
+          else
+            puts "Logging user #{name} gave: #{un_response.code} #{un_response.message}"
+          end
+        end
+      end
+
       if ssh
         ssh.loop
       end
-      end
+    end
   rescue SystemExit
     setDoorState(0, ssh)
     puts 'OOPS'
