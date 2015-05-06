@@ -12,6 +12,7 @@ DAILY_VISITS=$TMP_VISITS_FOLDER/daily_visits.log
 DAILY_COUNTS=$TMP_VISITS_FOLDER/daily_counts.log
 MONTHLY_COUNTS=$TMP_VISITS_FOLDER/monthly_counts.log
 ANNUAL_COUNTS=$TMP_VISITS_FOLDER/annual_counts.log
+PERSON_COUNTS=$TMP_VISITS_FOLDER/person_counts.log
 
 # Get the visits files
 # Assumes you have doorbot[1-3] set up in your ssh aliases
@@ -34,6 +35,9 @@ sort $COMBINED_VISITS | uniq > $DAILY_VISITS
 cut -d ' ' -f 1 $DAILY_VISITS | uniq -c > $DAILY_COUNTS
 cut -d ' ' -f 1 $DAILY_VISITS | cut -d '-' -f 1,2 | uniq -c > $MONTHLY_COUNTS
 cut -d ' ' -f 1 $DAILY_VISITS | cut -d '-' -f 1 | uniq -c > $ANNUAL_COUNTS
+
+# And just for fun, how many visits each person has had
+cut -d ' ' -f 2-8 $DAILY_VISITS | sort | uniq -c | sort -g > $PERSON_COUNTS
 
 echo "We've had `cat $DAILY_VISITS | wc -l` since records began"
 echo
