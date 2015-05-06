@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Get a temporary folder to store our working files into
 TMP_VISITS_FOLDER=`mktemp --tmpdir -d visitor_stats.XXXX`
