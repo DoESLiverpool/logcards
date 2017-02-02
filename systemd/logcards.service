@@ -13,6 +13,8 @@ WorkingDirectory=/home/pi/logcards/
 # Now kick off the screen to run logcards in
 ExecStart=/usr/bin/screen -S rfid -d -m /home/pi/logcards/run_logcards.sh
 ExecStop=/usr/bin/screen -X -S rfid quit
+# Stop systemd from killing screen as soon as it starts (because it'll exit)
+RemainAfterExit=yes
 # Auto restart on crash
 #Restart=on-failure
 # Tag things in the log
