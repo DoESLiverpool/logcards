@@ -251,7 +251,7 @@ while true
           uid = user["primary"]
           if seen.index(uid)
             puts "OMG RECURSION!!"
-            blah = `espeak -v en "Recursion error!"`
+            blah = `espeak -v en "Recursion error!" --stdout | aplay`
             uid = ""
             user = nil
             break
@@ -270,7 +270,7 @@ while true
           nickname = name if nickname.nil?
         else
           puts "#{uid} was unrecognised"
-          blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to an organiser to be inducted." 1> /dev/null 2>&1`
+          blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to an organiser to be inducted." --stdout | aplay`
           next
         end
         
@@ -317,7 +317,7 @@ while true
           puts "#{uid} Left"
           visitsFile.write("#{uid}\t#{last_visit["arrived_at"]}\t#{time}\t#{name}\n")
           visitsFile.flush
-          blah = `espeak -v en "Thank you, goodbye #{nickname}" 1> /dev/null 2>&1`
+          blah = `espeak -v en "Thank you, goodbye #{nickname}" --stdout | aplay`
           #blah = `aplay thanks-goodbye.aiff > /dev/null 2> /dev/null`
           visits[uid] = nil
         else
@@ -344,7 +344,7 @@ while true
               sleep 4
             end
           else
-            blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" 1> /dev/null 2>&1`
+            blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" --stdout | aplay`
           end
           #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
         end
