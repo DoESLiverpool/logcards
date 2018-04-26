@@ -314,40 +314,38 @@ while true
           visitsFile.flush
           last_visit = nil
         end
-        if last_visit
-          puts "#{uid} Left"
-          visitsFile.write("#{uid}\t#{last_visit["arrived_at"]}\t#{time}\t#{name}\n")
-          visitsFile.flush
-          blah = `espeak -v en "Thank you, goodbye #{nickname}" --stdout | aplay`
-          #blah = `aplay thanks-goodbye.aiff > /dev/null 2> /dev/null`
-          visits[uid] = nil
-        else
-          special_sound = nil
-          day_sounds = nil
-          if LCConfig.config["sounds"]
-            day_sounds = LCConfig.config["sounds"]["#{time.month}-#{time.day}"]
-          end
-          if day_sounds
-            special_sound = day_sounds.sample
-          end
-          puts "#{uid} Arrived"
-          visits[uid] = { "arrived_at" => time }
-          if special_sound
-            cmd = "aplay wav/#{special_sound}&"
-            puts "ringtone: #{cmd}"
-            blah = `#{cmd}`
-          elsif user and user["ringtone"]
-            cmd = "aplay wav/#{user["ringtone"]}&"
-            puts "ringtone: #{cmd}"
-            begin
-              blah = `#{cmd}`
-            rescue Exception
-              sleep 4
-            end
+        fork do
+          if last_visit
+            puts "#{uid} Left"
+            visitsFile.write("#{uid}\t#{last_visit["arrived_at"]}\t#{time}\t#{name}\n")
+            visitsFile.flush
+            blah = `espeak -v en "Thank you, goodbye #{nickname}" --stdout | aplay`
+            #blah = `aplay thanks-goodbye.aiff > /dev/null 2> /dev/null`
+            visits[uid] = nil
           else
-            blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" --stdout | aplay &`
+            special_sound = nil
+            day_sounds = nil
+            if LCConfig.config["sounds"]
+              day_sounds = LCConfig.config["sounds"]["#{time.month}-#{time.day}"]
+            end
+            if day_sounds
+              special_sound = day_sounds.sample
+            end
+            puts "#{uid} Arrived"
+            visits[uid] = { "arrived_at" => time }
+            if special_sound
+              cmd = "aplay wav/#{special_sound}"
+              puts "ringtone: #{cmd}"
+              blah = `#{cmd}`
+            elsif user and user["ringtone"]
+              cmd = "aplay wav/#{user["ringtone"]}"
+              puts "ringtone: #{cmd}"
+              blah = `#{cmd}`
+            else
+              blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" --stdout | aplay`
+            end
+            #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
           end
-          #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
         end
         File.open(VISITS_YAML, "w") do |out|
           YAML.dump(visits, out)
