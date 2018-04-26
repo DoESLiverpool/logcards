@@ -396,7 +396,7 @@ while true
         ssh.loop
       end
       
-      sleep 5
+      sleep 2
     end
   rescue SystemExit
     setDoorState(0, ssh)
