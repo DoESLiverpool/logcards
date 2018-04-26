@@ -35,8 +35,9 @@ class LCConfig
     if min.nil? and LCConfig.config["settings"]
       min = LCConfig.config["settings"]["door_open_minimum"]
     end
-    if min.nil?
-      min = 2
+    min = min.to_f
+    if min.nil? || min == 0
+      min = 0.1
     end
     min
   end
@@ -332,11 +333,11 @@ while true
           puts "#{uid} Arrived"
           visits[uid] = { "arrived_at" => time }
           if special_sound
-            cmd = "aplay wav/#{special_sound}"
+            cmd = "aplay wav/#{special_sound}&"
             puts "ringtone: #{cmd}"
             blah = `#{cmd}`
           elsif user and user["ringtone"]
-            cmd = "aplay wav/#{user["ringtone"]}"
+            cmd = "aplay wav/#{user["ringtone"]}&"
             puts "ringtone: #{cmd}"
             begin
               blah = `#{cmd}`
@@ -344,7 +345,7 @@ while true
               sleep 4
             end
           else
-            blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" --stdout | aplay`
+            blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" --stdout | aplay &`
           end
           #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
         end
@@ -352,22 +353,25 @@ while true
           YAML.dump(visits, out)
         end
         if door_opened_at
-          opened_for = ( Time.now - door_opened_at ).to_i
+          opened_for = ( Time.now - door_opened_at )
           while opened_for < LCConfig.door_open_minimum
-            puts "Sleeping for an extra second"
-            sleep 1
-            opened_for += 1
+            interval = 0.05
+            puts "Sleeping for an extra #{interval}s"
+            sleep interval
+            opened_for += interval
           end
           setDoorState(0, ssh)
         end
         if user and user["mapme_at_code"]
-          puts "Should check into mapme.at"
-          host = "DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at"
-          Dnsruby::DNS.open {|dns|
-            puts dns.getresource(host, "TXT")
-          }
+          fork do
+            puts "Should check into mapme.at"
+            host = "DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at"
+            Dnsruby::DNS.open {|dns|
+              puts dns.getresource(host, "TXT")
+            }
 
-          #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
+            #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
+          end
         end
       end
 
