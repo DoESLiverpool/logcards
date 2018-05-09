@@ -371,6 +371,8 @@ while true
             #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
           end
         end
+
+        sleep 2
       end
 
       if $unloggedFile['user'].count > 0
@@ -395,8 +397,6 @@ while true
       if ssh
         ssh.loop
       end
-      
-      sleep 2
     end
   rescue SystemExit
     setDoorState(0, ssh)
