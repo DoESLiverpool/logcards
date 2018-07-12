@@ -18,6 +18,7 @@ require 'uri'
 require 'net/ssh'
 require 'dnsruby'
 require 'tzinfo'
+require 'slack-ruby-client'
 
 #YAML::ENGINE.yamler = 'syck'
 
@@ -25,8 +26,16 @@ class LCConfig
   def self.load
     @@config = YAML.load_file("#{File.dirname(File.expand_path($0))}/config.yaml")
     @@tz = nil
+    @@slack_configured = false
     if @@config["settings"] and @@config["settings"]["timezone"]
       @@tz = TZInfo::Timezone.get(@@config["settings"]["timezone"])
+    end
+    if @@config["settings"] and @@config["settings"]["slack-api-token"]
+      token = @@config["settings"]["slack-api-token"]
+      Slack.configure do |config|
+        config.token = token
+        @@slack_configured = true
+      end
     end
   end
 
@@ -44,6 +53,10 @@ class LCConfig
 
   def self.config
     @@config
+  end
+
+  def self.slack_configured
+    @@slack_configured
   end
 
   def self.tz
@@ -141,6 +154,16 @@ def saveUnloggedVisits
   File.open(UNLOGGED_VISITS_YAML, "w") do |out|
     YAML.dump($unloggedFile, out)
   end
+end
+
+def announce(message)
+  puts message
+
+  return unless LCConfig.slack_configured
+
+  client = Slack::Web::Client.new
+  client.chat_postMessage(channel: '#doorbots-announce', text: message, as_user: true)
+  puts "-> SLACK"
 end
 
 puts "DoorBot: #{ENV["DOORBOT_ENV"]}"
@@ -265,12 +288,12 @@ while true
         name = ""
         nickname = ""
         if user
-          puts "Visit from #{user["name"]}"
+          announce("Visit from #{user["name"]}")
           name = user["name"]
           nickname = user["nickname"]
           nickname = name if nickname.nil?
         else
-          puts "#{uid} was unrecognised"
+          announce("#{uid} was unrecognised")
           blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to an organiser to be inducted." --stdout | aplay`
           next
         end
