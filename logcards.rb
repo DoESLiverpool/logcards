@@ -288,7 +288,8 @@ while true
         name = ""
         nickname = ""
         if user
-          announce("Visit from #{user["name"]}")
+          access = user["access"] || []
+          announce("Visit from #{user["name"]} (#{access.join(", ")}) from #{ENV['DOORBOT_ENV']}")
           name = user["name"]
           nickname = user["nickname"]
           nickname = name if nickname.nil?
