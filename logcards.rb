@@ -338,7 +338,7 @@ while true
           visitsFile.flush
           last_visit = nil
         end
-        fork do
+        p = fork do
           if last_visit
             puts "#{uid} Left"
             visitsFile.write("#{uid}\t#{last_visit["arrived_at"]}\t#{time}\t#{name}\n")
@@ -371,6 +371,7 @@ while true
             #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
           end
         end
+	Process.detach(p) # So we don't leave that process as a zombie
         File.open(VISITS_YAML, "w") do |out|
           YAML.dump(visits, out)
         end
@@ -385,7 +386,7 @@ while true
           setDoorState(0, ssh)
         end
         if user and user["mapme_at_code"]
-          fork do
+          m = fork do
             puts "Should check into mapme.at"
             host = "DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at"
             Dnsruby::DNS.open {|dns|
@@ -394,6 +395,7 @@ while true
 
             #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
           end
+	  Process.detach(m) # So we don't leave that process as a zombie
         end
 
         sleep 2
