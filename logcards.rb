@@ -370,11 +370,11 @@ while true
             end
             #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
           end
+          File.open(VISITS_YAML, "w") do |out|
+            YAML.dump(visits, out)
+          end
         end
 	Process.detach(p) # So we don't leave that process as a zombie
-        File.open(VISITS_YAML, "w") do |out|
-          YAML.dump(visits, out)
-        end
         if door_opened_at
           opened_for = ( Time.now - door_opened_at )
           while opened_for < LCConfig.door_open_minimum
