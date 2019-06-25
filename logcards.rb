@@ -146,7 +146,9 @@ end
 
 
 def setDoorState(state, ssh)
-  `echo #{state} > /sys/class/gpio/gpio25/value`
+  File.open('/sys/class/gpio/gpio25/value', 'w').do { |out|
+    out.write(state)
+  end
   setSSH(state, ssh)
 end
 
