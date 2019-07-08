@@ -67,6 +67,17 @@ class LCConfig
     @@config["environments"][ENV['DOORBOT_ENV']]
   end
 
+  def self.user(uid)
+    user = nil
+    LCConfig.config["users"].each { |k, u|
+      next unless k.downcase == uid.downcase
+
+      user = u
+      break
+    }
+    return user
+  end
+
   $connection_error = nil
 
   def self.kindle_ssh
@@ -269,7 +280,7 @@ while true
         today = Date.today.to_s
         scansFile.write("#{uid}\t#{time}\n")
         scansFile.flush
-        user = LCConfig.config["users"][uid]
+        user = LCConfig.user(uid)
         seen = []
         puts "tag #{uid} at #{time}"
         while user and user["primary"]
