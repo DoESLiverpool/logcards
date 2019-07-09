@@ -29,7 +29,7 @@ class LCConfig
     @@slack_configured = false
     @@users = {}
     @@config["users"].each { |k,v|
-      @@users[k.downcase] = v
+      @@users[String(k).downcase] = v
     }
     if @@config["settings"] and @@config["settings"]["timezone"]
       @@tz = TZInfo::Timezone.get(@@config["settings"]["timezone"])
