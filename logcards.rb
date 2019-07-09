@@ -27,6 +27,10 @@ class LCConfig
     @@config = YAML.load_file("#{File.dirname(File.expand_path($0))}/config.yaml")
     @@tz = nil
     @@slack_configured = false
+    @@users = {}
+    @@config["users"].each { |k,v|
+      @@users[k.downcase] = v
+    }
     if @@config["settings"] and @@config["settings"]["timezone"]
       @@tz = TZInfo::Timezone.get(@@config["settings"]["timezone"])
     end
@@ -68,14 +72,7 @@ class LCConfig
   end
 
   def self.user(uid)
-    user = nil
-    LCConfig.config["users"].each { |k, u|
-      next unless k.downcase == uid.downcase
-
-      user = u
-      break
-    }
-    return user
+    return @@users[uid.downcase]
   end
 
   $connection_error = nil
