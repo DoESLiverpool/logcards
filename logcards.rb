@@ -27,6 +27,10 @@ class LCConfig
     @@config = YAML.load_file("#{File.dirname(File.expand_path($0))}/config.yaml")
     @@tz = nil
     @@slack_configured = false
+    @@users = {}
+    @@config["users"].each { |k,v|
+      @@users[String(k).downcase] = v
+    }
     if @@config["settings"] and @@config["settings"]["timezone"]
       @@tz = TZInfo::Timezone.get(@@config["settings"]["timezone"])
     end
@@ -65,6 +69,10 @@ class LCConfig
 
   def self.env
     @@config["environments"][ENV['DOORBOT_ENV']]
+  end
+
+  def self.user(uid)
+    return @@users[uid.downcase]
   end
 
   $connection_error = nil
@@ -146,7 +154,9 @@ end
 
 
 def setDoorState(state, ssh)
-  `echo #{state} > /sys/class/gpio/gpio25/value`
+  File.open('/sys/class/gpio/gpio25/value', 'w') do |out|
+    out.write(state)
+  end
   setSSH(state, ssh)
 end
 
@@ -267,7 +277,7 @@ while true
         today = Date.today.to_s
         scansFile.write("#{uid}\t#{time}\n")
         scansFile.flush
-        user = LCConfig.config["users"][uid]
+        user = LCConfig.user(uid)
         seen = []
         puts "tag #{uid} at #{time}"
         while user and user["primary"]
