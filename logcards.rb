@@ -15,10 +15,8 @@ require 'yaml'
 require 'net/http'
 require 'json'
 require 'uri'
-require 'net/ssh'
 require 'dnsruby'
 require 'tzinfo'
-require 'slack-ruby-client'
 
 #YAML::ENGINE.yamler = 'syck'
 
@@ -26,20 +24,12 @@ class LCConfig
   def self.load
     @@config = YAML.load_file("#{File.dirname(File.expand_path($0))}/config.yaml")
     @@tz = nil
-    @@slack_configured = false
     @@users = {}
     @@config["users"].each { |k,v|
       @@users[String(k).downcase] = v
     }
     if @@config["settings"] and @@config["settings"]["timezone"]
       @@tz = TZInfo::Timezone.get(@@config["settings"]["timezone"])
-    end
-    if @@config["settings"] and @@config["settings"]["slack-api-token"]
-      token = @@config["settings"]["slack-api-token"]
-      Slack.configure do |config|
-        config.token = token
-        @@slack_configured = true
-      end
     end
   end
 
@@ -59,10 +49,6 @@ class LCConfig
     @@config
   end
 
-  def self.slack_configured
-    @@slack_configured
-  end
-
   def self.tz
     @@tz
   end
@@ -77,44 +63,6 @@ class LCConfig
 
   $connection_error = nil
 
-  def self.kindle_ssh
-    kindle = LCConfig.env["kindle"]
-    ssh = nil
-    if kindle
-      if !$connection_error
-        puts "Trying to ssh into the kindle"
-        begin
-          ssh = Net::SSH.start(kindle['ip'], kindle['user'], :password => kindle['password'], :port => kindle['port'], :timeout => kindle['timeout'])
-          puts "Connection complete"
-        rescue Errno::EHOSTUNREACH => e
-          puts "Can't reach Kindle..."
-          # This is usually because the Kindle has mounted as a USB disk
-          # Try unmounting it
-          `umount /media/Kindle`
-          `udisks --eject /dev/sda`
-          raise e
-        end
-      end
-    end
-    return ssh
-  rescue Timeout::Error => e
-    $connection_error = true
-    puts "Oops #{e.inspect}"
-    puts "Please check the config for the kindle and check you can ssh into the kindle"
-  rescue SocketError => e
-    $connection_error = true
-    puts "Oops #{e.inspect}"
-    puts "Please check the config for the kindle and check you can ssh into the kindle"
-  rescue Net::SSH::AuthenticationFailed => e
-    $connection_error = true
-    puts "Oops #{e.inspect}"
-    puts "Please check the config for the kindle and check you can ssh into the kindle"
-  rescue Net::SSH::Exception => e
-    $connection_error = true
-    puts "Oops #{e.inspect}"
-    puts "Please check the config for the kindle and check you can ssh into the kindle"
-  end
-
   def self.setup_signal
     Signal.trap("HUP") do
       begin
@@ -123,6 +71,10 @@ class LCConfig
       rescue Exception => e
         puts "erk: #{e.inspect}"
       end
+    end
+    Signal.trap("INFO") do
+      puts GC.stat.inspect
+      GC.start
     end
   end
 end
@@ -135,29 +87,10 @@ VISITS_YAML = 'visits.yaml'
 DAY_VISITS_YAML = 'day_visits.yaml'
 UNLOGGED_VISITS_YAML = 'unlogged_visits.yaml'
 
-def setSSH(state, ssh)
-  if ssh
-    close_image = LCConfig.env["kindle"]["close"]
-    open_image = LCConfig.env["kindle"]["open"]
-    if state == 1
-      ssh.exec!("eips -g #{open_image}")
-    end
-    if state == 0
-      ssh.exec!('eips -c')
-      ssh.exec!("eips -g #{close_image}")
-    end
-  end
-rescue Exception => e
-  puts "SSH failed #{e}"
-end
-
-
-
-def setDoorState(state, ssh)
+def setDoorState(state)
   File.open('/sys/class/gpio/gpio25/value', 'w') do |out|
     out.write(state)
   end
-  setSSH(state, ssh)
 end
 
 def saveUnloggedVisits
@@ -168,12 +101,6 @@ end
 
 def announce(message)
   puts message
-
-  return unless LCConfig.slack_configured
-
-  client = Slack::Web::Client.new
-  client.chat_postMessage(channel: '#doorbots-announce', text: message, as_user: true)
-  puts "-> SLACK"
 end
 
 puts "DoorBot: #{ENV["DOORBOT_ENV"]}"
@@ -221,26 +148,6 @@ end
 
 while true
   begin
-    if `mount | grep /media/Kindle` != ""
-      print "Kindle is mounted. Unmounting"
-      puts `umount /media/Kindle`
-      if `mount | grep /media/Kindle` != ""
-        print "Kindle is still mounted. Trying secondary unmount"
-        puts `udisks --eject /dev/sda`
-      end
-      if `mount | grep /media/Kindle` != ""
-        print "Kindle is still mounted so disabling the kindle ssh"
-        $connection_error = true
-      end
-    end
-    if !$connection_error
-      ssh = LCConfig.kindle_ssh
-      if ssh
-        puts "Trying to ssh in to the kindle"
-        puts "Connection Successful"
-        setSSH(0, ssh)
-      end
-    end
     puts "Welcome to Doorbot"
     scansFile = File.open("scans.log", "a")
     hotdesksFile = File.open("hotdesks.log", "a")
@@ -285,7 +192,6 @@ while true
           uid = user["primary"]
           if seen.index(uid)
             puts "OMG RECURSION!!"
-            blah = `espeak -v en "Recursion error!" --stdout | aplay`
             uid = ""
             user = nil
             break
@@ -305,7 +211,6 @@ while true
           nickname = name if nickname.nil?
         else
           announce("#{uid} was unrecognised")
-          blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to an organiser to be inducted." --stdout | aplay`
           next
         end
         
@@ -313,7 +218,7 @@ while true
         door_opened_at = nil
         access_required = LCConfig.env['access'] || []
         if LCConfig.env.has_key?('access') && ( access_required.length == 0 || ( access_required & access ).length > 0 )
-          setDoorState(1, ssh)
+          setDoorState(1)
           door_opened_at = Time.now
         end
         last_day = dayVisits[uid]
@@ -348,43 +253,18 @@ while true
           visitsFile.flush
           last_visit = nil
         end
-        p = fork do
-          if last_visit
-            puts "#{uid} Left"
-            visitsFile.write("#{uid}\t#{last_visit["arrived_at"]}\t#{time}\t#{name}\n")
-            visitsFile.flush
-            blah = `espeak -v en "Thank you, goodbye #{nickname}" --stdout | aplay`
-            #blah = `aplay thanks-goodbye.aiff > /dev/null 2> /dev/null`
-            visits[uid] = nil
-          else
-            special_sound = nil
-            day_sounds = nil
-            if LCConfig.config["sounds"]
-              day_sounds = LCConfig.config["sounds"]["#{time.month}-#{time.day}"]
-            end
-            if day_sounds
-              special_sound = day_sounds.sample
-            end
-            puts "#{uid} Arrived"
-            visits[uid] = { "arrived_at" => time }
-            if special_sound
-              cmd = "aplay wav/#{special_sound}"
-              puts "ringtone: #{cmd}"
-              blah = `#{cmd}`
-            elsif user and user["ringtone"]
-              cmd = "aplay wav/#{user["ringtone"]}"
-              puts "ringtone: #{cmd}"
-              blah = `#{cmd}`
-            else
-              blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" --stdout | aplay`
-            end
-            #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
-          end
-          File.open(VISITS_YAML, "w") do |out|
-            YAML.dump(visits, out)
-          end
+        if last_visit
+          puts "#{uid} Left"
+          visitsFile.write("#{uid}\t#{last_visit["arrived_at"]}\t#{time}\t#{name}\n")
+          visitsFile.flush
+          visits[uid] = nil
+        else
+          puts "#{uid} Arrived"
+          visits[uid] = { "arrived_at" => time }
         end
-	Process.detach(p) # So we don't leave that process as a zombie
+        File.open(VISITS_YAML, "w") do |out|
+          YAML.dump(visits, out)
+        end
         if door_opened_at
           opened_for = ( Time.now - door_opened_at )
           while opened_for < LCConfig.door_open_minimum
@@ -393,7 +273,7 @@ while true
             sleep interval
             opened_for += interval
           end
-          setDoorState(0, ssh)
+          setDoorState(0)
         end
         if user and user["mapme_at_code"]
           m = fork do
@@ -405,7 +285,7 @@ while true
 
             #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
           end
-	  Process.detach(m) # So we don't leave that process as a zombie
+	        Process.detach(m) # So we don't leave that process as a zombie
         end
 
         sleep 2
@@ -430,16 +310,13 @@ while true
         end
       end
 
-      if ssh
-        ssh.loop
-      end
     end
   rescue SystemExit
-    setDoorState(0, ssh)
+    setDoorState(0)
     puts 'OOPS'
     exit
   rescue Exception => e
-    setDoorState(0, ssh)
+    setDoorState(0)
     puts "Oops #{e.inspect}"
   end
 
