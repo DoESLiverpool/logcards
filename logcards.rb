@@ -395,18 +395,6 @@ while true
           end
           setDoorState(0, ssh)
         end
-        if user and user["mapme_at_code"]
-          m = fork do
-            puts "Should check into mapme.at"
-            host = "DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at"
-            Dnsruby::DNS.open {|dns|
-              puts dns.getresource(host, "TXT")
-            }
-
-            #puts `dig DoESLiverpool.#{Time.now.to_i}.#{user["mapme_at_code"]}.dns.mapme.at > /dev/null 2> /dev/null`
-          end
-	  Process.detach(m) # So we don't leave that process as a zombie
-        end
 
         sleep 2
       end
