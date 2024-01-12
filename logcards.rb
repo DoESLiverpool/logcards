@@ -72,7 +72,7 @@ class LCConfig
         puts "erk: #{e.inspect}"
       end
     end
-    Signal.trap("INFO") do
+    Signal.trap("USR2") do
       puts GC.stat.inspect
       GC.start
     end
@@ -295,19 +295,28 @@ while true
         puts "Logging unlogged users"
         # Using keys so that the fact that we're modifying the hash doesn't matter
         $unloggedFile['user'].keys.each do |name|
+          if name.nil?
+            puts("Removing nil entry")
+            $unloggedFile['user'].delete(name)
+            saveUnloggedVisits()
+            next
+          end
+          user = $unloggedFile['user'][name]
+          puts("Logging unlogged user: #{name.inspect} (#{user})")
           uri = URI.parse("https://docs.google.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse?entry.1000001=#{URI.escape(name)}&entry.1000002=#{$unloggedFile['user'][name]}&entry.1000002.other_option_response=&submit=Submit")
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl =true
           un_request = Net::HTTP::Get.new(uri.request_uri)
           un_response = http.request(un_request)
-          if un_response.code == "200"
-            puts "User #{name} has been logged"
+          if un_response.code.to_i >= 200 or un_response.code.to_i < 500
+            puts "User #{name} has been logged (#{un_response.code})"
             $unloggedFile['user'].delete(name)
             saveUnloggedVisits()
           else
             puts "Logging user #{name} gave: #{un_response.code} #{un_response.message}"
           end
         end
+        puts "DONE Logging unlogged users"
       end
 
     end
@@ -318,6 +327,7 @@ while true
   rescue Exception => e
     setDoorState(0)
     puts "Oops #{e.inspect}"
+    puts e.backtrace.join("\n")
   end
 
   scansFile.close if scansFile
