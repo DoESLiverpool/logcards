@@ -201,6 +201,7 @@ while true
           uid = user["primary"]
           if seen.index(uid)
             puts "OMG RECURSION!!"
+            blah = `espeak -v en "Recursion error!" --stdout | aplay`
             uid = ""
             user = nil
             break
@@ -220,6 +221,7 @@ while true
           nickname = name if nickname.nil?
         else
           announce("#{uid} was unrecognised")
+          blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}. Please talk to an organiser to be inducted." --stdout | aplay`
           next
         end
         
@@ -274,6 +276,29 @@ while true
         File.open(VISITS_YAML, "w") do |out|
           YAML.dump(visits, out)
         end
+        p = fork do
+          special_sound = nil
+          day_sounds = nil
+          if LCConfig.config["sounds"]
+            day_sounds = LCConfig.config["sounds"]["#{time.month}-#{time.day}"]
+          end
+          if day_sounds
+            special_sound = day_sounds.sample
+          end
+          if special_sound
+            cmd = "aplay wav/#{special_sound}"
+            puts "ringtone: #{cmd}"
+            blah = `#{cmd}`
+          elsif user and user["ringtone"]
+            cmd = "aplay wav/#{user['ringtone']}"
+            puts "ringtone: #{cmd}"
+            blah = `#{cmd}`
+          else
+            blah = `espeak -v en "Thank you, welcome to duss Liverpool #{nickname}" --stdout | aplay`
+          end
+          #blah = `aplay thanks-welcome.aiff > /dev/null 2> /dev/null`
+        end
+        Process.detach(p) # So we don't leave that process as a zombie
         if door_opened_at
           opened_for = ( Time.now - door_opened_at )
           while opened_for < LCConfig.door_open_minimum
