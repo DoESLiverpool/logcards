@@ -1,6 +1,8 @@
 #!/bin/bash
 
-if [ ! -d /sys/class/gpio/gpio25 ]; then
+if [ -f /usr/bin/pinctrl ]; then
+	pinctrl set 25 op
+elif [ ! -d /sys/class/gpio/gpio25 ]; then
         echo 25 > /sys/class/gpio/export
         echo out > /sys/class/gpio/gpio25/direction
 fi

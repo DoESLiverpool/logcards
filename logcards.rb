@@ -88,8 +88,17 @@ DAY_VISITS_YAML = 'day_visits.yaml'
 UNLOGGED_VISITS_YAML = 'unlogged_visits.yaml'
 
 def setDoorState(state)
-  File.open('/sys/class/gpio/gpio25/value', 'w') do |out|
-    out.write(state)
+  if File.exist?('/usr/bin/pinctrl')
+    # We're on a newer OS, so use "pinctrl" to access GPIO
+    if state == 1
+      `pinctrl set 25 dh`
+    else
+      `pinctrl set 25 dl`
+    end
+  else
+    File.open('/sys/class/gpio/gpio25/value', 'w') do |out|
+      out.write(state)
+    end
   end
 end
 
