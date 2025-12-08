@@ -124,19 +124,19 @@ hotdesksFile = nil
 visitsFile = nil
 $testUID = nil
 if File.file?(VISITS_YAML)
-  visits = YAML.load_file(VISITS_YAML)
+  visits = YAML.load_file(VISITS_YAML, permitted_classes: [Time])
 end
 if visits.nil? or visits == false
   visits = {}
 end
 if File.file?(DAY_VISITS_YAML)
-  dayVisits = YAML.load_file(DAY_VISITS_YAML)
+  dayVisits = YAML.load_file(DAY_VISITS_YAML, permitted_classes: [Time])
 end
 if dayVisits.nil? or dayVisits == false
   dayVisits = {}
 end
 if File.file?(UNLOGGED_VISITS_YAML)
-  $unloggedFile = YAML.load_file(UNLOGGED_VISITS_YAML)
+  $unloggedFile = YAML.load_file(UNLOGGED_VISITS_YAML, permitted_classes: [Time])
 end
 if $unloggedFile.nil? or $unloggedFile == false
   $unloggedFile = {}
