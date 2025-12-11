@@ -325,7 +325,7 @@ while true
           end
           user = $unloggedFile['user'][name]
           puts("Logging unlogged user: #{name.inspect} (#{user})")
-          uri = URI.parse("https://docs.google.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse?entry.1000001=#{URI.escape(name)}&entry.1000002=#{$unloggedFile['user'][name]}&entry.1000002.other_option_response=&submit=Submit")
+          uri = URI.parse("https://docs.google.com/forms/d/1eW3ebkEZcoQ7AvsLoZmL5Ju7eQbw8xABXQm3ggPJ-v4/formResponse?entry.1000001=#{URI.encode_uri_component(name)}&entry.1000002=#{$unloggedFile['user'][name]}&entry.1000002.other_option_response=&submit=Submit")
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl =true
           un_request = Net::HTTP::Get.new(uri.request_uri)
